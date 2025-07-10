@@ -1,25 +1,28 @@
 import OpenAI from "openai";
-import daskalosIndex from "./daskalos-index.json";
+import lunr from "lunr";
+import daskalosIndexData from "./daskalos-index.json";
+import daskalosDocuments from "./daskalos-documents.json";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// Simple search
-function searchIndex(query, index) {
-  const words = query.toLowerCase().split(/\s+/);
-  return index
-    .map(entry => {
-      const text = entry.text.toLowerCase();
-      let score = 0;
-      words.forEach(word => {
-        if (text.includes(word)) score += 1;
-      });
-      return { ...entry, score };
+// Load the Lunr index
+const lunrIndex = lunr.Index.load(daskalosIndexData.index);
+
+// Search function
+function searchIndex(query) {
+  return lunrIndex.search(query).slice(0, 3);
+}
+
+// Map refs to text
+function getTextsFromRefs(refs) {
+  return refs
+    .map(ref => {
+      const doc = daskalosDocuments.find(d => d.id === ref.ref);
+      return doc ? doc.text : "";
     })
-    .filter(entry => entry.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3);
+    .filter(Boolean);
 }
 
 export async function handler(event) {
@@ -40,8 +43,9 @@ export async function handler(event) {
   }
 
   // Search
-  const results = searchIndex(question, daskalosIndex);
-  const contextText = results.map((r, i) => `${i + 1}. ${r.text}`).join("\n\n");
+  const refs = searchIndex(question);
+  const texts = getTextsFromRefs(refs);
+  const contextText = texts.map((t, i) => `${i + 1}. ${t}`).join("\n\n");
 
   // Build the prompt
   const messages = [

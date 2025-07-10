@@ -8,42 +8,42 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Inter', Arial, sans-serif;
       margin: 0;
       background-color: #f9f9f9;
       color: #333;
+      font-family: 'Inter', Arial, sans-serif;
     }
 
     .container {
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      max-width: 1200px;
+      gap: 2rem;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 2rem 1rem;
-      gap: 3rem;
-      flex-wrap: wrap;
+      padding: 2rem;
+      box-sizing: border-box;
     }
 
     main {
-      flex: 1 1 600px;
+      flex: 1 1 700px;
       max-width: 800px;
-      background-color: #fff;
+      background: #fff;
       padding: 2rem;
       border-radius: 0.75em;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
 
     aside {
-      flex: 0 0 280px;
+      width: 300px;
       background: #fff;
       padding: 1.5rem;
       border-radius: 0.75em;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      text-align: center;
       position: sticky;
       top: 2rem;
       height: fit-content;
+      text-align: center;
     }
 
     aside img {
@@ -220,23 +220,6 @@
       border: 1px solid #ccc;
     }
 
-    @media (max-width: 900px) {
-      .container {
-        flex-direction: column;
-        align-items: center;
-      }
-
-      aside {
-        position: relative;
-        top: 0;
-        width: 100%;
-        max-width: 400px;
-      }
-
-      main {
-        max-width: 100%;
-      }
-    }
   </style>
 </head>
 <body>
@@ -288,9 +271,7 @@
 
   <script src="https://unpkg.com/lunr/lunr.js"></script>
   <script>
-    // EXISTING FUNCTIONS...
-    // KEEP ALL YOUR SEARCH, NOTES, AND NAVIGATION CODE THE SAME
-
+    // Your existing JavaScript remains untouched here
     async function askDaskalos() {
       const question = document.getElementById('askInput').value.trim();
       if (!question) {

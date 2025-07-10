@@ -1,3 +1,36 @@
+import OpenAI from "openai";
+import lunr from "lunr";
+import daskalosIndexData from "./daskalos-index.json";
+import daskalosDocuments from "./daskalos-documents.json";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+// ✅ Load the Lunr index
+const lunrIndex = lunr.Index.load(daskalosIndexData.index);
+
+// ✅ Search function with top 3 results
+function searchIndex(query) {
+  try {
+    return lunrIndex.search(query).slice(0, 3);
+  } catch (e) {
+    console.error("Lunr search error:", e);
+    return [];
+  }
+}
+
+// ✅ Map lunr refs to document text
+function getTextsFromRefs(refs) {
+  return refs
+    .map(ref => {
+      const doc = daskalosDocuments.find(d => d.id === ref.ref);
+      return doc ? (doc.text || doc.content || "") : "";
+    })
+    .filter(Boolean);
+}
+
+// ✅ Netlify Lambda Handler
 export async function handler(event) {
   if (event.httpMethod !== "POST") {
     return {
@@ -6,7 +39,16 @@ export async function handler(event) {
     };
   }
 
-  const { question } = JSON.parse(event.body);
+  let question;
+  try {
+    const body = JSON.parse(event.body);
+    question = body.question;
+  } catch (err) {
+    return {
+      statusCode: 400,
+      body: "Invalid JSON",
+    };
+  }
 
   if (!question) {
     return {
@@ -15,15 +57,15 @@ export async function handler(event) {
     };
   }
 
-  // 🔍 Search with fallback
+  // 🔍 Search the index
   let refs = searchIndex(question);
 
+  // ✅ Fallback if no matches found
   if (refs.length === 0) {
-    // Fallback if nothing found
     refs = daskalosDocuments.slice(0, 3).map(doc => ({ ref: doc.id }));
   }
 
-  // Map refs to texts
+  // 🗂 Build context text
   const texts = getTextsFromRefs(refs);
   const contextText = texts
     .slice(0, 3)
@@ -49,16 +91,24 @@ ${contextText}
     }
   ];
 
-  // 🤖 Call OpenAI
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages
-  });
+  try {
+    // 🤖 Call OpenAI
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages
+    });
 
-  const answer = completion.choices[0].message.content;
+    const answer = completion.choices[0].message.content;
 
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ answer })
-  };
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ answer })
+    };
+  } catch (error) {
+    console.error("OpenAI Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "OpenAI request failed" })
+    };
+  }
 }

@@ -1,1 +1,4 @@
 netlify/functions/openai.txt
+
+# Local Netlify folder
+.netlify

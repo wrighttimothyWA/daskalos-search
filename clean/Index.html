@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Daskalos STOA Search with AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      margin: 0;
+      padding: 2em;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      max-width: 180px;
+      height: auto;
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin: 0;
+      color: #333;
+    }
+
+    .search-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+      gap: 0.5em;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"] {
+      padding: 0.75em 1em;
+      font-size: 1rem;
+      width: min(90%, 400px);
+      border: 1px solid #ccc;
+      border-radius: 0.5em;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    button {
+      padding: 0.75em 1em;
+      font-size: 1rem;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 0.5em;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    h2 {
+      margin-top: 2rem;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 0.25em;
+      color: #555;
+      text-align: center;
+    }
+
+    #results {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5em;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    #results div {
+      padding: 0.75em 1em;
+      border: 1px solid #ddd;
+      border-radius: 0.5em;
+      background-color: white;
+      cursor: pointer;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+
+    #results div:hover {
+      background-color: #f0f8ff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #docTitle {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 1.5rem;
+      color: #333;
+    }
+
+    #navButtons {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    #navButtons button {
+      margin: 0 0.5em;
+    }
+
+    #fullText {
+      max-width: 800px;
+      margin: 1rem auto;
+      padding: 1.5em;
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 0.5em;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      white-space: pre-wrap;
+      overflow-y: auto;
+      max-height: 60vh;
+    }
+
+    .highlight {
+      background-color: #fff59d;
+      padding: 0 0.15em;
+      border-radius: 0.15em;
+      font-weight: 600;
+    }
+
+    .current-highlight {
+      background-color: #ffeb3b;
+      border: 1px solid #fbc02d;
+    }
+
+    #notesPanel {
+      max-width: 800px;
+      margin: 2rem auto;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 0.5em;
+      padding: 1.5em;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    #notesPanel h3 {
+      margin-top: 0;
+    }
+
+    #notesList {
+      margin-top: 1em;
+    }
+
+    .noteItem {
+      padding: 0.75em;
+      border: 1px solid #ccc;
+      border-radius: 0.5em;
+      margin-bottom: 0.5em;
+      background-color: #f9f9f9;
+      position: relative;
+    }
+
+    .noteItem button {
+      position: absolute;
+      top: 0.5em;
+      right: 0.5em;
+      font-size: 0.8em;
+    }
+
+    #newNote {
+      width: 100%;
+      padding: 0.5em;
+      margin-top: 0.5em;
+      border-radius: 0.5em;
+      border: 1px solid #ccc;
+    }
+
+    #askResult {
+      white-space: pre-wrap;
+      max-width: 600px;
+      margin: 1em auto;
+      padding: 1em;
+      border: 1px solid #ccc;
+      border-radius: 0.5em;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="logo.png" alt="Daskalos Logo" class="logo" />
+    <h1>Daskalos STOA Search</h1>
+  </div>
+
+  <!-- STOA SEARCH SECTION -->
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Enter search term" />
+    <button onclick="runSearch()">Search</button>
+  </div>
+
+  <h2>Results</h2>
+  <div id="results"></div>
+
+  <h2 id="docTitle"></h2>
+  <div id="navButtons" style="display:none;">
+    <button onclick="prevHighlight()">Previous</button>
+    <button onclick="nextHighlight()">Next</button>
+  </div>
+  <div id="fullText"></div>
+
+  <div id="notesPanel" style="display:none;">
+    <h3>My Notes for This Document</h3>
+    <textarea id="newNote" placeholder="Write a new note here..."></textarea>
+    <button onclick="addNote()">Add Note</button>
+    <div id="notesList"></div>
+  </div>
+
+  <!-- AI CHAT SECTION -->
+  <h2>Ask Daskalos (AI)</h2>
+  <div class="search-container">
+    <input type="text" id="askInput" placeholder="Ask Daskalos anything..." />
+    <button onclick="askDaskalos()">Ask</button>
+  </div>
+  <div id="askResult">
+    <em>AI responses will appear here.</em>
+  </div>
+
+  <script src="https://unpkg.com/lunr/lunr.js"></script>
+  <script>
+    // EXISTING STOA SEARCH CODE (UNCHANGED)
+    let loadedShards = [];
+    let loadedDocuments = [];
+    let currentHighlightIndex = 0;
+    let highlights = [];
+    let currentDocPath = '';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const query = params.get('q');
+      if (query) {
+        document.getElementById('searchInput').value = query;
+        runSearch();
+      }
+    });
+
+    function sanitizeInput(input) {
+      return input.replace(/[^a-zA-Z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    async function loadAllShards() {
+      const allShards = [];
+      for (let part = 0; part <= 16; part++) {
+        await loadShard(allShards, `docs/category-shards/daskalos-part-${part}.json`);
+      }
+      for (let part = 0; part <= 19; part++) {
+        await loadShard(allShards, `docs/category-shards/daskalosbooks-part-${part}.json`);
+      }
+      return allShards;
+    }
+
+    async function loadShard(allShards, file) {
+      try {
+        const res = await fetch(file);
+        if (!res.ok) return;
+        const data = await res.json();
+        allShards.push({
+          index: lunr.Index.load(data.index),
+          documents: data.documents
+        });
+      } catch (e) {
+        console.warn(`⚠️ Could not load shard ${file}:`, e);
+      }
+    }
+
+    async function runSearch() {
+      const rawInput = document.getElementById('searchInput').value.trim();
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+      document.getElementById('docTitle').textContent = '';
+      document.getElementById('fullText').textContent = '';
+      document.getElementById('navButtons').style.display = 'none';
+      document.getElementById('notesPanel').style.display = 'none';
+
+      if (!rawInput) {
+        resultsDiv.innerHTML = '<em>Please enter a search term above.</em>';
+        return;
+      }
+
+      const cleanedInput = sanitizeInput(rawInput);
+      if (!cleanedInput) {
+        resultsDiv.innerHTML = '<em>Search term contained only invalid characters.</em>';
+        return;
+      }
+
+      resultsDiv.innerHTML = '<em>Loading Daskalos Index data...</em>';
+
+      try {
+        loadedShards = await loadAllShards();
+        if (loadedShards.length === 0) {
+          resultsDiv.innerHTML = '<em>Category data not found.</em>';
+          return;
+        }
+
+        loadedDocuments = loadedShards.flatMap(shard => shard.documents);
+
+        const allResults = [];
+        loadedShards.forEach(shard => {
+          try {
+            const res = shard.index.search(cleanedInput);
+            res.forEach(r => {
+              const doc = shard.documents.find(d => d.id === r.ref);
+              if (doc) allResults.push({ doc, score: r.score });
+            });
+          } catch (err) {
+            console.error('❌ Error searching a shard:', err);
+          }
+        });
+
+        if (allResults.length === 0) {
+          resultsDiv.innerHTML = `<em>No matches found in Daskalos Index.</em>`;
+          return;
+        }
+
+        resultsDiv.innerHTML = '';
+        allResults
+          .sort((a, b) => b.score - a.score)
+          .forEach(({ doc, score }) => {
+            const div = document.createElement('div');
+            div.innerHTML = `<strong>${doc.title}</strong> <em>(score: ${score.toFixed(2)})</em>`;
+            div.onclick = () => showFullText(doc.title, cleanedInput);
+            resultsDiv.appendChild(div);
+          });
+
+      } catch (err) {
+        console.error('❌ Error loading Daskalos Index data:', err);
+        resultsDiv.innerHTML = '<em>Could not load Daskalos Index data.</em>';
+      }
+    }
+
+    async function showFullText(docPath, searchTerm) {
+      currentDocPath = docPath;
+      document.getElementById('docTitle').textContent = docPath;
+      document.getElementById('navButtons').style.display = 'none';
+      document.getElementById('notesPanel').style.display = 'block';
+      loadNotes();
+      highlights = [];
+      currentHighlightIndex = 0;
+
+      try {
+        const res = await fetch(`docs/${docPath}`);
+        if (!res.ok) throw new Error('Not found');
+        let content = await res.text();
+
+        let safeContent = content
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+
+        if (searchTerm) {
+          const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+          safeContent = safeContent.replace(regex, match => `<span class="highlight">${match}</span>`);
+        }
+
+        document.getElementById('fullText').innerHTML = safeContent;
+        highlights = document.querySelectorAll('.highlight');
+        if (highlights.length > 0) {
+          currentHighlightIndex = 0;
+          scrollToHighlight();
+          document.getElementById('navButtons').style.display = 'block';
+        }
+
+      } catch (err) {
+        console.error('❌ Error loading full text:', err);
+        document.getElementById('fullText').innerHTML = '<em>Unable to load document content.</em>';
+      }
+    }
+
+    function scrollToHighlight() {
+      highlights.forEach(span => span.classList.remove('current-highlight'));
+      if (highlights.length > 0) {
+        highlights[currentHighlightIndex].classList.add('current-highlight');
+        highlights[currentHighlightIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function nextHighlight() {
+      if (highlights.length === 0) return;
+      currentHighlightIndex = (currentHighlightIndex + 1) % highlights.length;
+      scrollToHighlight();
+    }
+
+    function prevHighlight() {
+      if (highlights.length === 0) return;
+      currentHighlightIndex = (currentHighlightIndex - 1 + highlights.length) % highlights.length;
+      scrollToHighlight();
+    }
+
+    function loadNotes() {
+      const notesList = document.getElementById('notesList');
+      notesList.innerHTML = '';
+      const saved = localStorage.getItem(`notes_${currentDocPath}`);
+      if (saved) {
+        const notes = JSON.parse(saved);
+        notes.forEach((note, index) => {
+          const div = document.createElement('div');
+          div.className = 'noteItem';
+          div.textContent = note;
+          const del = document.createElement('button');
+          del.textContent = 'Delete';
+          del.onclick = () => deleteNote(index);
+          div.appendChild(del);
+          notesList.appendChild(div);
+        });
+      }
+    }
+
+    function addNote() {
+      const newNoteText = document.getElementById('newNote').value.trim();
+      if (!newNoteText) return;
+      const saved = localStorage.getItem(`notes_${currentDocPath}`);
+      let notes = saved ? JSON.parse(saved) : [];
+      notes.push(newNoteText);
+      localStorage.setItem(`notes_${currentDocPath}`, JSON.stringify(notes));
+      document.getElementById('newNote').value = '';
+      loadNotes();
+    }
+
+    function deleteNote(index) {
+      const saved = localStorage.getItem(`notes_${currentDocPath}`);
+      let notes = saved ? JSON.parse(saved) : [];
+      notes.splice(index, 1);
+      localStorage.setItem(`notes_${currentDocPath}`, JSON.stringify(notes));
+      loadNotes();
+    }
+
+    // NEW FUNCTION: AI Chat
+    async function askDaskalos() {
+      const question = document.getElementById('askInput').value.trim();
+      const resultDiv = document.getElementById('askResult');
+
+      if (!question) {
+        resultDiv.innerHTML = '<em>Please enter a question above.</em>';
+        return;
+      }
+
+      resultDiv.textContent = "Daskalos is thinking...";
+
+      try {
+        const response = await fetch('/.netlify/functions/ask-daskalos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+
+        if (!response.ok) throw new Error('Server error');
+
+        const data = await response.json();
+        resultDiv.textContent = data.answer;
+      } catch (error) {
+        console.error(error);
+        resultDiv.textContent = "❌ Error contacting Daskalos AI.";
+      }
+    }
+  </script>
+</body>
+</html>

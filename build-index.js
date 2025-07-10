@@ -66,3 +66,10 @@ for (let i = 0; i < documents.length; i += CHUNK_SIZE) {
 }
 
 console.log(`\n🎉 Done! Shards are in: ${SHARDS_FOLDER}`);
+
+fs.writeFileSync(
+  path.join(CATEGORY_FOLDER, 'daskalos-documents.json'),
+  JSON.stringify(documents, null, 2)
+);
+console.log(`✅ Wrote daskalos-documents.json`);
+

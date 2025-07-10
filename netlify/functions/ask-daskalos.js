@@ -1,14 +1,9 @@
-import { readFileSync } from "fs";
 import OpenAI from "openai";
+import daskalosIndex from "./daskalos-index.json";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
-
-// Load your index once
-const daskalosIndex = JSON.parse(
-  readFileSync("./daskalos-index.json", "utf-8")
-);
 
 // Simple search
 function searchIndex(query, index) {

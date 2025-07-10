@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ask Daskalos (AI)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      margin: 0;
+      padding: 2em;
+      background-color: #f9f9f9;
+      color: #333;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 500px;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 0.75em;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .logo {
+      max-width: 160px;
+      margin: 0 auto 1rem;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.8rem;
+      color: #333;
+    }
+
+    img.daskalos-photo {
+      width: 100%;
+      border-radius: 0.5em;
+      margin-bottom: 1rem;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 0.75em;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5em;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.75em;
+      font-size: 1rem;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 0.5em;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #askResult {
+      margin-top: 1rem;
+      padding: 1em;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 0.5em;
+      white-space: pre-wrap;
+      min-height: 3em;
+      text-align: left;
+    }
+
+    a.back-link {
+      display: inline-block;
+      margin-top: 2rem;
+      text-decoration: none;
+      color: #007BFF;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="logo.png" alt="Daskalos Logo" class="logo" />
+    <h1>Ask Daskalos (AI)</h1>
+
+    <img src="daskalos.png" alt="Daskalos Photo" class="daskalos-photo">
+
+    <input type="text" id="askInput" placeholder="Ask Daskalos anything..." />
+    <button onclick="askDaskalos()">Ask</button>
+
+    <div id="askResult">
+      <em>Ask Daskalos to see his answer here...</em>
+    </div>
+
+    <a href="index.html" class="back-link">← Back to STOA Search</a>
+  </div>
+
+  <script>
+    async function askDaskalos() {
+      const question = document.getElementById('askInput').value.trim();
+      const resultDiv = document.getElementById('askResult');
+
+      if (!question) {
+        resultDiv.innerHTML = '<em>Please enter a question above.</em>';
+        return;
+      }
+
+      resultDiv.textContent = "Daskalos is thinking...";
+
+      try {
+        const response = await fetch('/.netlify/functions/ask-daskalos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+
+        if (!response.ok) throw new Error('Server error');
+
+        const data = await response.json();
+        resultDiv.textContent = data.answer;
+      } catch (error) {
+        console.error(error);
+        resultDiv.textContent = "❌ Error contacting Daskalos AI.";
+      }
+    }
+  </script>
+</body>
+</html>

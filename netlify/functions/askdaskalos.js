@@ -11,7 +11,6 @@ exports.handler = async function(event, context) {
       };
     }
 
-    // Call OpenAI
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -19,7 +18,7 @@ exports.handler = async function(event, context) {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-4o",  // or your chosen model
+        model: "gpt-4o",
         messages: [
           { role: "system", content: "You are Daskalos. Answer as he would, based on his lectures and philosophy." },
           { role: "user", content: prompt }

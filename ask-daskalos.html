@@ -80,17 +80,16 @@
       text-align: left;
     }
 
-    #audioContainer {
+    #audioSection {
       margin-top: 1rem;
       text-align: center;
       border: 1px solid #eee;
       padding: 1em;
       border-radius: 0.5em;
       background-color: #fefefe;
-      display: none;
     }
 
-    #audioContainer label {
+    #audioSection label {
       display: block;
       margin-bottom: 0.5em;
       font-weight: bold;
@@ -119,7 +118,7 @@
       <em>Ask Daskalos to see his answer here...</em>
     </div>
 
-    <div id="audioContainer">
+    <div id="audioSection">
       <label>Listen to Daskalos's Friend:</label>
       <audio id="audioPlayer" controls>
         <source id="audioSource" src="" type="audio/mpeg">
@@ -134,13 +133,10 @@
     async function askDaskalos() {
       const question = document.getElementById('askInput').value.trim();
       const resultDiv = document.getElementById('askResult');
-      const audioContainer = document.getElementById('audioContainer');
       const audioPlayer = document.getElementById('audioPlayer');
       const audioSource = document.getElementById('audioSource');
 
-      // Reset
       resultDiv.textContent = "Daskalos is thinking...";
-      audioContainer.style.display = "none";
       audioSource.src = "";
       audioPlayer.load();
 
@@ -164,11 +160,14 @@
         if (data.audio) {
           audioSource.src = "data:audio/mpeg;base64," + data.audio;
           audioPlayer.load();
-          audioContainer.style.display = "block";
+          audioPlayer.style.display = "block";
+        } else {
+          audioPlayer.style.display = "none";
         }
       } catch (error) {
         console.error(error);
         resultDiv.textContent = "❌ Error contacting Daskalos AI.";
+        audioPlayer.style.display = "none";
       }
     }
   </script>

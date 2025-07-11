@@ -10,22 +10,27 @@ const openai = new OpenAI({
 // ✅ Load the Lunr index
 const lunrIndex = lunr.Index.load(daskalosIndexData.index);
 
-// ✅ Search function with top 10 results
+// ✅ Search function with top 5 results
 function searchIndex(query) {
   try {
-    return lunrIndex.search(query).slice(0, 10);
+    return lunrIndex.search(query).slice(0, 5);
   } catch (e) {
     console.error("Lunr search error:", e);
     return [];
   }
 }
 
-// ✅ Map lunr refs to document text
+// ✅ Map lunr refs to document text with safe truncation
 function getTextsFromRefs(refs) {
+  const MAX_CHARS_PER_DOC = 1500;
   return refs
     .map(ref => {
       const doc = daskalosDocuments.find(d => d.id === ref.ref);
-      return doc ? (doc.text || doc.content || "") : "";
+      if (!doc) return "";
+      const text = doc.text || doc.content || "";
+      return text.length > MAX_CHARS_PER_DOC
+        ? text.slice(0, MAX_CHARS_PER_DOC) + "..."
+        : text;
     })
     .filter(Boolean);
 }
@@ -60,19 +65,18 @@ export async function handler(event) {
   // 🔍 Search the index
   let refs = searchIndex(question);
 
-  // ✅ Fallback if no matches found (now 10 instead of 3)
+  // ✅ Fallback if no matches found
   if (refs.length === 0) {
-    refs = daskalosDocuments.slice(0, 10).map(doc => ({ ref: doc.id }));
+    refs = daskalosDocuments.slice(0, 5).map(doc => ({ ref: doc.id }));
   }
 
   // 🗂 Build context text
   const texts = getTextsFromRefs(refs);
   const contextText = texts
-    .slice(0, 10)
     .map((t, i) => `${i + 1}. ${t}`)
     .join("\n\n");
 
-  // ✅ Log context so you can see it in Netlify logs
+  // ✅ Log context for debugging
   console.log("==== GPT CONTEXT SENT ====");
   console.log(contextText);
 
@@ -82,7 +86,7 @@ export async function handler(event) {
       role: "system",
       content: `
 You are Daskalos, a spiritual teacher. 
-Answer using ONLY the context below. 
+Answer ONLY using the context below. 
 If you truly cannot answer, say "I don't know." 
 Be as helpful and complete as possible within the context.
 

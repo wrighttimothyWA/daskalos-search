@@ -1,4 +1,43 @@
-// ...imports unchanged...
+import OpenAI from "openai";
+import lunr from "lunr";
+import fetch from "node-fetch"; // needed for ElevenLabs API call
+import daskalosIndexData from "./daskalos-index.json";
+import daskalosDocuments from "./daskalos-documents.json";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY;
+const ELEVEN_VOICE_ID = process.env.ELEVEN_VOICE_ID;
+
+// ✅ Load the Lunr index
+const lunrIndex = lunr.Index.load(daskalosIndexData.index);
+
+// ✅ Search function with top 10 results
+function searchIndex(query) {
+  try {
+    return lunrIndex.search(query).slice(0, 10);
+  } catch (e) {
+    console.error("Lunr search error:", e);
+    return [];
+  }
+}
+
+// ✅ Map lunr refs to document text with safe truncation
+function getTextsFromRefs(refs) {
+  const MAX_CHARS_PER_DOC = 3000; // increased for richer context
+  return refs
+    .map(ref => {
+      const doc = daskalosDocuments.find(d => d.id === ref.ref);
+      if (!doc) return "";
+      const text = doc.text || doc.content || "";
+      return text.length > MAX_CHARS_PER_DOC
+        ? text.slice(0, MAX_CHARS_PER_DOC) + "..."
+        : text;
+    })
+    .filter(t => t && t.trim().length > 50); // Filter out tiny junk
+}
 
 // ✅ ElevenLabs TTS helper
 async function getElevenLabsAudio(text) {
@@ -64,8 +103,9 @@ export async function handler(event) {
     refs = daskalosDocuments.slice(0, 10).map(doc => ({ ref: doc.id }));
   }
 
-  // 🗂 Build context
+  // 🗂 Build context text with global trimming
   const texts = getTextsFromRefs(refs);
+
   let contextText = '';
   let count = 0;
   const MAX_TOTAL_CHARS = 8000;
@@ -84,6 +124,7 @@ export async function handler(event) {
   console.log("==== GPT CONTEXT SENT ====");
   console.log(contextText);
 
+  // 🧠 Build the prompt
   const messages = [
     {
       role: "system",
@@ -108,30 +149,27 @@ ${contextText}
       model: "gpt-3.5-turbo",
       messages
     });
+
     const answer = completion.choices[0].message.content;
 
-    // ✅ Call ElevenLabs TTS
+    // ✅ Optionally generate audio if answer is not too long
     let audioBase64 = null;
-    if (answer) {
-      const TTS_MAX_CHARS = 800;
-      const shortAnswer = answer.length > TTS_MAX_CHARS
-        ? answer.slice(0, TTS_MAX_CHARS) + "..."
-        : answer;
-      audioBase64 = await getElevenLabsAudio(shortAnswer);
+    if (answer && answer.length < 1000) {
+      audioBase64 = await getElevenLabsAudio(answer);
     }
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         answer,
-        audio: audioBase64 ? `data:audio/mpeg;base64,${audioBase64}` : null
+        audio: audioBase64
       })
     };
   } catch (error) {
-    console.error("Error:", error);
+    console.error("OpenAI Error:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Server Error" })
+      body: JSON.stringify({ error: "OpenAI request failed" })
     };
   }
 }

@@ -82,13 +82,14 @@
 
     #audioContainer {
       margin-top: 1rem;
-      text-align: center;
+      display: none;
     }
 
-    #audioContainer h3 {
-      margin: 0.5em 0;
-      font-size: 1rem;
-      color: #333;
+    #audioContainer label {
+      display: block;
+      margin-bottom: 0.5em;
+      font-weight: bold;
+      text-align: left;
     }
 
     a.back-link {
@@ -113,8 +114,8 @@
       <em>Ask Daskalos to see his answer here...</em>
     </div>
 
-    <div id="audioContainer" style="display: none;">
-      <h3>🎧 Listen to response from Daskalos's Friend</h3>
+    <div id="audioContainer">
+      <label>Listen to Daskalos's Friend:</label>
       <audio id="audioPlayer" controls></audio>
     </div>
 
@@ -128,14 +129,15 @@
       const audioContainer = document.getElementById('audioContainer');
       const audioPlayer = document.getElementById('audioPlayer');
 
+      // Reset
+      resultDiv.textContent = "Daskalos is thinking...";
+      audioContainer.style.display = "none";
+      audioPlayer.src = "";
+
       if (!question) {
         resultDiv.innerHTML = '<em>Please enter a question above.</em>';
-        audioContainer.style.display = 'none';
         return;
       }
-
-      resultDiv.textContent = "Daskalos is thinking...";
-      audioContainer.style.display = 'none';
 
       try {
         const response = await fetch('/.netlify/functions/ask-daskalos', {
@@ -147,18 +149,15 @@
         if (!response.ok) throw new Error('Server error');
 
         const data = await response.json();
-        resultDiv.textContent = data.answer || "No response.";
+        resultDiv.textContent = data.answer;
 
         if (data.audio) {
           audioPlayer.src = "data:audio/mpeg;base64," + data.audio;
-          audioContainer.style.display = 'block';
-        } else {
-          audioContainer.style.display = 'none';
+          audioContainer.style.display = "block";
         }
       } catch (error) {
         console.error(error);
         resultDiv.textContent = "❌ Error contacting Daskalos AI.";
-        audioContainer.style.display = 'none';
       }
     }
   </script>

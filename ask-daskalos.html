@@ -82,7 +82,11 @@
 
     #audioContainer {
       margin-top: 1rem;
-      text-align: left;
+      text-align: center;
+      border: 1px solid #eee;
+      padding: 1em;
+      border-radius: 0.5em;
+      background-color: #fefefe;
       display: none;
     }
 
@@ -90,6 +94,7 @@
       display: block;
       margin-bottom: 0.5em;
       font-weight: bold;
+      color: #333;
     }
 
     a.back-link {
@@ -117,6 +122,7 @@
     <div id="audioContainer">
       <label>Listen to Daskalos's Friend:</label>
       <audio id="audioPlayer" controls>
+        <source id="audioSource" src="" type="audio/mpeg">
         Your browser does not support the audio element.
       </audio>
     </div>
@@ -130,11 +136,13 @@
       const resultDiv = document.getElementById('askResult');
       const audioContainer = document.getElementById('audioContainer');
       const audioPlayer = document.getElementById('audioPlayer');
+      const audioSource = document.getElementById('audioSource');
 
       // Reset
       resultDiv.textContent = "Daskalos is thinking...";
       audioContainer.style.display = "none";
-      audioPlayer.src = "";
+      audioSource.src = "";
+      audioPlayer.load();
 
       if (!question) {
         resultDiv.innerHTML = '<em>Please enter a question above.</em>';
@@ -154,7 +162,8 @@
         resultDiv.textContent = data.answer;
 
         if (data.audio) {
-          audioPlayer.src = "data:audio/mpeg;base64," + data.audio;
+          audioSource.src = "data:audio/mpeg;base64," + data.audio;
+          audioPlayer.load();
           audioContainer.style.display = "block";
         }
       } catch (error) {

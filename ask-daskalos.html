@@ -82,6 +82,7 @@
 
     #audioContainer {
       margin-top: 1rem;
+      text-align: left;
       display: none;
     }
 
@@ -89,7 +90,6 @@
       display: block;
       margin-bottom: 0.5em;
       font-weight: bold;
-      text-align: left;
     }
 
     a.back-link {
@@ -116,7 +116,9 @@
 
     <div id="audioContainer">
       <label>Listen to Daskalos's Friend:</label>
-      <audio id="audioPlayer" controls></audio>
+      <audio id="audioPlayer" controls>
+        Your browser does not support the audio element.
+      </audio>
     </div>
 
     <a href="index.html" class="back-link">← Back to STOA Search</a>

@@ -10,10 +10,10 @@ const openai = new OpenAI({
 // ✅ Load the Lunr index
 const lunrIndex = lunr.Index.load(daskalosIndexData.index);
 
-// ✅ Search function with top 5 results
+// ✅ Search function with top 10 results
 function searchIndex(query) {
   try {
-    return lunrIndex.search(query).slice(0, 5);
+    return lunrIndex.search(query).slice(0, 10);
   } catch (e) {
     console.error("Lunr search error:", e);
     return [];
@@ -32,7 +32,7 @@ function getTextsFromRefs(refs) {
         ? text.slice(0, MAX_CHARS_PER_DOC) + "..."
         : text;
     })
-    .filter(Boolean);
+    .filter(t => t && t.trim().length > 50); // Filter out tiny junk
 }
 
 // ✅ Netlify Lambda Handler
@@ -67,14 +67,24 @@ export async function handler(event) {
 
   // ✅ Fallback if no matches found
   if (refs.length === 0) {
-    refs = daskalosDocuments.slice(0, 5).map(doc => ({ ref: doc.id }));
+    refs = daskalosDocuments.slice(0, 10).map(doc => ({ ref: doc.id }));
   }
 
-  // 🗂 Build context text
+  // 🗂 Build context text with global trimming
   const texts = getTextsFromRefs(refs);
-  const contextText = texts
-    .map((t, i) => `${i + 1}. ${t}`)
-    .join("\n\n");
+
+  let contextText = '';
+  let count = 0;
+  for (const t of texts) {
+    if (count >= 10) break;
+    if ((contextText + '\n\n' + t).length > 8000) break;
+    contextText += `\n\n${count + 1}. ${t.trim()}`;
+    count++;
+  }
+
+  if (!contextText) {
+    contextText = "No relevant context found in the archive.";
+  }
 
   // ✅ Log context for debugging
   console.log("==== GPT CONTEXT SENT ====");

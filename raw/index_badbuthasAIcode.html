@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Daskalos STOA Search with AI</title>
+  <title>Daskalos STOA Search with AI Sidebar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -15,28 +15,27 @@
       color: #333;
     }
 
-    .container {
+    #container {
       display: flex;
-      flex-wrap: wrap;
       gap: 2rem;
+      align-items: flex-start;
       max-width: 1400px;
       margin: 0 auto;
     }
 
     main {
-      flex: 1 1 700px;
-      min-width: 300px;
+      flex: 1;
       max-width: 800px;
     }
 
     aside {
-      flex: 0 0 300px;
-      background: #fff;
-      padding: 1.5rem;
+      width: 280px;
+      background-color: #fff;
+      border: 1px solid #ddd;
       border-radius: 0.75em;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      text-align: center;
-      height: fit-content;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 1.5em;
+      box-sizing: border-box;
       position: sticky;
       top: 2rem;
     }
@@ -48,11 +47,41 @@
       margin-bottom: 1rem;
     }
 
-    #daskalosQuote {
-      font-style: italic;
-      color: #555;
-      font-size: 0.95rem;
+    #askInput {
+      width: 100%;
+      margin-bottom: 0.5em;
+      padding: 0.75em 1em;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5em;
+      box-sizing: border-box;
+    }
+
+    aside button {
+      width: 100%;
+      padding: 0.75em 1em;
+      font-size: 1rem;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 0.5em;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    aside button:hover {
+      background-color: #0056b3;
+    }
+
+    #askResult {
+      margin-top: 1em;
+      padding: 1em;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 0.5em;
       white-space: pre-wrap;
+      color: #555;
+      min-height: 3em;
     }
 
     .header {
@@ -216,22 +245,10 @@
       border-radius: 0.5em;
       border: 1px solid #ccc;
     }
-
-    #askResult {
-      white-space: pre-wrap;
-      max-width: 600px;
-      margin: 1em auto;
-      padding: 1em;
-      border: 1px solid #ccc;
-      border-radius: 0.5em;
-      background-color: #fff;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-
   </style>
 </head>
 <body>
-  <div class="container">
+  <div id="container">
     <main>
       <div class="header">
         <img src="logo.png" alt="Daskalos Logo" class="logo" />
@@ -259,20 +276,13 @@
         <button onclick="addNote()">Add Note</button>
         <div id="notesList"></div>
       </div>
-
-      <h2>Ask Daskalos (AI)</h2>
-      <div class="search-container">
-        <input type="text" id="askInput" placeholder="Ask Daskalos anything..." />
-        <button onclick="askDaskalos()">Ask</button>
-      </div>
-      <div id="askResult">
-        <em>AI responses will appear here.</em>
-      </div>
     </main>
 
     <aside>
-      <img src="daskalos.png" alt="Daskalos Photo">
-      <div id="daskalosQuote">
+      <img src="daskalos.png" alt="Daskalos Photo" />
+      <input type="text" id="askInput" placeholder="Ask Daskalos anything..." />
+      <button onclick="askDaskalos()">Ask</button>
+      <div id="askResult">
         <em>Ask Daskalos to see his answer here...</em>
       </div>
     </aside>
@@ -280,21 +290,21 @@
 
   <script src="https://unpkg.com/lunr/lunr.js"></script>
   <script>
-    // Your FULL original JS stays exactly the same, plus this small addition:
+    // KEEP ALL YOUR EXISTING SEARCH, NOTES, NAVIGATION CODE AS IS!
 
+    // YOUR SEARCH FUNCTIONS ARE UNCHANGED HERE ...
+
+    // AI Chat Function
     async function askDaskalos() {
       const question = document.getElementById('askInput').value.trim();
       const resultDiv = document.getElementById('askResult');
-      const asideQuote = document.getElementById('daskalosQuote');
 
       if (!question) {
         resultDiv.innerHTML = '<em>Please enter a question above.</em>';
-        asideQuote.innerHTML = '<em>Please enter a question above.</em>';
         return;
       }
 
       resultDiv.textContent = "Daskalos is thinking...";
-      asideQuote.textContent = "Daskalos is thinking...";
 
       try {
         const response = await fetch('/.netlify/functions/ask-daskalos', {
@@ -304,14 +314,12 @@
         });
 
         if (!response.ok) throw new Error('Server error');
+
         const data = await response.json();
         resultDiv.textContent = data.answer;
-        asideQuote.textContent = data.answer;
-
       } catch (error) {
         console.error(error);
         resultDiv.textContent = "❌ Error contacting Daskalos AI.";
-        asideQuote.textContent = "❌ Error contacting Daskalos AI.";
       }
     }
   </script>

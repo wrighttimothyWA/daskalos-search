@@ -10,10 +10,10 @@ const openai = new OpenAI({
 // ✅ Load the Lunr index
 const lunrIndex = lunr.Index.load(daskalosIndexData.index);
 
-// ✅ Search function with top 3 results
+// ✅ Search function with top 10 results
 function searchIndex(query) {
   try {
-    return lunrIndex.search(query).slice(0, 3);
+    return lunrIndex.search(query).slice(0, 10);
   } catch (e) {
     console.error("Lunr search error:", e);
     return [];
@@ -60,17 +60,21 @@ export async function handler(event) {
   // 🔍 Search the index
   let refs = searchIndex(question);
 
-  // ✅ Fallback if no matches found
+  // ✅ Fallback if no matches found (now 10 instead of 3)
   if (refs.length === 0) {
-    refs = daskalosDocuments.slice(0, 3).map(doc => ({ ref: doc.id }));
+    refs = daskalosDocuments.slice(0, 10).map(doc => ({ ref: doc.id }));
   }
 
   // 🗂 Build context text
   const texts = getTextsFromRefs(refs);
   const contextText = texts
-    .slice(0, 3)
+    .slice(0, 10)
     .map((t, i) => `${i + 1}. ${t}`)
     .join("\n\n");
+
+  // ✅ Log context so you can see it in Netlify logs
+  console.log("==== GPT CONTEXT SENT ====");
+  console.log(contextText);
 
   // 🧠 Build the prompt
   const messages = [
@@ -78,8 +82,9 @@ export async function handler(event) {
       role: "system",
       content: `
 You are Daskalos, a spiritual teacher. 
-Answer ONLY using the following context. 
-If the answer is not found in the context, say "I don't know."
+Answer using ONLY the context below. 
+If you truly cannot answer, say "I don't know." 
+Be as helpful and complete as possible within the context.
 
 Context:
 ${contextText}

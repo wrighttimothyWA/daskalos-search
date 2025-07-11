@@ -2,61 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Ask Daskalos (AI)</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <title>Ask Daskalos</title>
   <style>
     body {
-      font-family: 'Inter', Arial, sans-serif;
-      margin: 0;
+      font-family: Arial, sans-serif;
       padding: 2em;
       background-color: #f9f9f9;
       color: #333;
-      display: flex;
-      justify-content: center;
     }
-
     .container {
-      max-width: 500px;
-      background: #fff;
-      padding: 2rem;
-      border-radius: 0.75em;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      text-align: center;
+      max-width: 700px;
+      margin: 0 auto;
     }
-
-    .logo {
-      max-width: 160px;
-      margin: 0 auto 1rem;
-    }
-
     h1 {
-      margin-top: 0;
-      font-size: 1.8rem;
-      color: #333;
+      text-align: center;
+      color: #0056b3;
     }
-
-    img.daskalos-photo {
+    textarea {
       width: 100%;
-      border-radius: 0.5em;
-      margin-bottom: 1rem;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 0.75em;
-      margin-bottom: 1rem;
-      font-size: 1rem;
+      height: 100px;
+      padding: 0.5em;
       border: 1px solid #ccc;
       border-radius: 0.5em;
-      box-sizing: border-box;
+      margin-bottom: 1em;
+      font-size: 1em;
     }
-
     button {
-      width: 100%;
-      padding: 0.75em;
-      font-size: 1rem;
+      padding: 0.75em 1.5em;
+      font-size: 1em;
       background-color: #007BFF;
       color: white;
       border: none;
@@ -64,58 +37,56 @@
       cursor: pointer;
       transition: background-color 0.2s;
     }
-
     button:hover {
       background-color: #0056b3;
     }
-
-    #askResult {
-      margin-top: 1rem;
+    #answer {
+      margin-top: 2em;
       padding: 1em;
-      background-color: #f9f9f9;
+      background-color: #fff;
       border: 1px solid #ddd;
       border-radius: 0.5em;
       white-space: pre-wrap;
-      min-height: 3em;
-      text-align: left;
     }
-
-    a.back-link {
-      display: inline-block;
-      margin-top: 2rem;
-      text-decoration: none;
-      color: #007BFF;
+    #audioPlayerContainer {
+      margin-top: 1em;
+      padding: 1em;
+      background-color: #f0f8ff;
+      border: 1px solid #ccc;
+      border-radius: 0.5em;
+      display: none;
+    }
+    audio {
+      width: 100%;
+      margin-top: 0.5em;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <img src="logo.png" alt="Daskalos Logo" class="logo" />
-    <h1>Ask Daskalos (AI)</h1>
-
-    <img src="daskalos.png" alt="Daskalos Photo" class="daskalos-photo">
-
-    <input type="text" id="askInput" placeholder="Ask Daskalos anything..." />
+    <h1>Ask Daskalos</h1>
+    <textarea id="questionInput" placeholder="Type your question for Daskalos..."></textarea>
     <button onclick="askDaskalos()">Ask</button>
+    
+    <div id="answer"></div>
 
-    <div id="askResult">
-      <em>Ask Daskalos to see his answer here...</em>
+    <div id="audioPlayerContainer">
+      <p>🎧 Listen to response from Daskalos's Friend:</p>
+      <audio id="audioPlayer" controls></audio>
     </div>
-
-    <a href="index.html" class="back-link">← Back to STOA Search</a>
   </div>
 
   <script>
     async function askDaskalos() {
-      const question = document.getElementById('askInput').value.trim();
-      const resultDiv = document.getElementById('askResult');
-
+      const question = document.getElementById('questionInput').value.trim();
       if (!question) {
-        resultDiv.innerHTML = '<em>Please enter a question above.</em>';
+        alert("Please enter a question.");
         return;
       }
 
-      resultDiv.textContent = "Daskalos is thinking...";
+      // Clear old answer
+      document.getElementById('answer').textContent = "Loading...";
+      document.getElementById('audioPlayerContainer').style.display = 'none';
 
       try {
         const response = await fetch('/.netlify/functions/ask-daskalos', {
@@ -123,14 +94,20 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ question })
         });
-
-        if (!response.ok) throw new Error('Server error');
-
         const data = await response.json();
-        resultDiv.textContent = data.answer;
+
+        // Show the text
+        document.getElementById('answer').textContent = data.answer;
+
+        // Show audio if available
+        if (data.audio) {
+          const audioPlayer = document.getElementById('audioPlayer');
+          audioPlayer.src = `data:audio/mpeg;base64,${data.audio}`;
+          document.getElementById('audioPlayerContainer').style.display = 'block';
+        }
       } catch (error) {
-        console.error(error);
-        resultDiv.textContent = "❌ Error contacting Daskalos AI.";
+        console.error("Error:", error);
+        document.getElementById('answer').textContent = "Sorry, there was an error. Please try again later.";
       }
     }
   </script>

@@ -1,38 +1,34 @@
-import OpenAI from "openai";
-import lunr from "lunr";
-import daskalosIndexData from "./daskalos-index.json";
-import daskalosDocuments from "./daskalos-documents.json";
+// ...imports unchanged...
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
-// ✅ Load the Lunr index
-const lunrIndex = lunr.Index.load(daskalosIndexData.index);
-
-// ✅ Search function with top 10 results
-function searchIndex(query) {
-  try {
-    return lunrIndex.search(query).slice(0, 10);
-  } catch (e) {
-    console.error("Lunr search error:", e);
-    return [];
+// ✅ ElevenLabs TTS helper
+async function getElevenLabsAudio(text) {
+  if (!ELEVEN_API_KEY || !ELEVEN_VOICE_ID) {
+    console.warn("❌ ElevenLabs not configured.");
+    return null;
   }
-}
 
-// ✅ Map lunr refs to document text with safe truncation
-function getTextsFromRefs(refs) {
-  const MAX_CHARS_PER_DOC = 3000; // increased for richer context
-  return refs
-    .map(ref => {
-      const doc = daskalosDocuments.find(d => d.id === ref.ref);
-      if (!doc) return "";
-      const text = doc.text || doc.content || "";
-      return text.length > MAX_CHARS_PER_DOC
-        ? text.slice(0, MAX_CHARS_PER_DOC) + "..."
-        : text;
+  const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE_ID}`, {
+    method: "POST",
+    headers: {
+      "xi-api-key": ELEVEN_API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      text,
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.5
+      }
     })
-    .filter(t => t && t.trim().length > 50); // Filter out tiny junk
+  });
+
+  if (!response.ok) {
+    console.error("ElevenLabs TTS failed:", await response.text());
+    return null;
+  }
+
+  const buffer = await response.arrayBuffer();
+  return Buffer.from(buffer).toString("base64");
 }
 
 // ✅ Netlify Lambda Handler
@@ -64,15 +60,12 @@ export async function handler(event) {
 
   // 🔍 Search the index
   let refs = searchIndex(question);
-
-  // ✅ Fallback if no matches found
   if (refs.length === 0) {
     refs = daskalosDocuments.slice(0, 10).map(doc => ({ ref: doc.id }));
   }
 
-  // 🗂 Build context text with global trimming
+  // 🗂 Build context
   const texts = getTextsFromRefs(refs);
-
   let contextText = '';
   let count = 0;
   const MAX_TOTAL_CHARS = 8000;
@@ -88,11 +81,9 @@ export async function handler(event) {
     contextText = "No relevant context found in the archive.";
   }
 
-  // ✅ Log context for debugging
   console.log("==== GPT CONTEXT SENT ====");
   console.log(contextText);
 
-  // 🧠 Build the prompt (softer)
   const messages = [
     {
       role: "system",
@@ -112,23 +103,35 @@ ${contextText}
   ];
 
   try {
-    // 🤖 Call OpenAI
+    // ✅ Call OpenAI
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages
     });
-
     const answer = completion.choices[0].message.content;
+
+    // ✅ Call ElevenLabs TTS
+    let audioBase64 = null;
+    if (answer) {
+      const TTS_MAX_CHARS = 800;
+      const shortAnswer = answer.length > TTS_MAX_CHARS
+        ? answer.slice(0, TTS_MAX_CHARS) + "..."
+        : answer;
+      audioBase64 = await getElevenLabsAudio(shortAnswer);
+    }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ answer })
+      body: JSON.stringify({
+        answer,
+        audio: audioBase64 ? `data:audio/mpeg;base64,${audioBase64}` : null
+      })
     };
   } catch (error) {
-    console.error("OpenAI Error:", error);
+    console.error("Error:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "OpenAI request failed" })
+      body: JSON.stringify({ error: "Server Error" })
     };
   }
 }

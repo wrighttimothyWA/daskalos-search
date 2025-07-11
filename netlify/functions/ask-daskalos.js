@@ -22,7 +22,7 @@ function searchIndex(query) {
 
 // ✅ Map lunr refs to document text with safe truncation
 function getTextsFromRefs(refs) {
-  const MAX_CHARS_PER_DOC = 1500;
+  const MAX_CHARS_PER_DOC = 3000; // increased for richer context
   return refs
     .map(ref => {
       const doc = daskalosDocuments.find(d => d.id === ref.ref);
@@ -75,9 +75,11 @@ export async function handler(event) {
 
   let contextText = '';
   let count = 0;
+  const MAX_TOTAL_CHARS = 8000;
+
   for (const t of texts) {
     if (count >= 10) break;
-    if ((contextText + '\n\n' + t).length > 8000) break;
+    if ((contextText + '\n\n' + t).length > MAX_TOTAL_CHARS) break;
     contextText += `\n\n${count + 1}. ${t.trim()}`;
     count++;
   }
@@ -90,15 +92,14 @@ export async function handler(event) {
   console.log("==== GPT CONTEXT SENT ====");
   console.log(contextText);
 
-  // 🧠 Build the prompt
+  // 🧠 Build the prompt (softer)
   const messages = [
     {
       role: "system",
       content: `
 You are Daskalos, a spiritual teacher. 
-Answer ONLY using the context below. 
-If you truly cannot answer, say "I don't know." 
-Be as helpful and complete as possible within the context.
+Answer using the context below as much as possible. 
+If you cannot find a direct answer, provide your best interpretation using the context provided.
 
 Context:
 ${contextText}

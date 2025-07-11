@@ -80,14 +80,20 @@
       text-align: left;
     }
 
-    .audio-section {
-      margin-top: 1rem;
+    .audio-container {
+      margin-top: 1.5rem;
       text-align: center;
     }
 
-    .audio-section p {
+    .audio-container p {
       margin-bottom: 0.5em;
       font-weight: bold;
+    }
+
+    audio {
+      width: 100%;
+      max-width: 400px;
+      outline: none;
     }
 
     a.back-link {
@@ -112,9 +118,9 @@
       <em>Ask Daskalos to see his answer here...</em>
     </div>
 
-    <div class="audio-section">
-      <p>Listen to Daskalos's Friend</p>
-      <audio id="audioPlayer" controls style="width: 100%; max-width: 400px; display: none;">
+    <div class="audio-container" id="audioContainer" style="display:none;">
+      <p>🎧 Listen to Daskalos's Friend:</p>
+      <audio id="audioPlayer" controls>
         <source id="audioSource" type="audio/mpeg" />
         Your browser does not support the audio element.
       </audio>
@@ -127,6 +133,7 @@
     async function askDaskalos() {
       const question = document.getElementById('askInput').value.trim();
       const resultDiv = document.getElementById('askResult');
+      const audioContainer = document.getElementById('audioContainer');
       const audioPlayer = document.getElementById('audioPlayer');
       const audioSource = document.getElementById('audioSource');
 
@@ -136,7 +143,7 @@
       }
 
       resultDiv.textContent = "Daskalos is thinking...";
-      audioPlayer.style.display = 'none';
+      audioContainer.style.display = 'none';
       audioSource.src = "";
       audioPlayer.load();
 
@@ -152,21 +159,17 @@
         const data = await response.json();
         resultDiv.textContent = data.answer;
 
-        if (data.audio) {
+        if (data.audio && data.audio.length > 50) {
           audioSource.src = "data:audio/mpeg;base64," + data.audio;
-          audioPlayer.style.display = 'block';
           audioPlayer.load();
+          audioContainer.style.display = 'block';
         } else {
-          audioSource.src = "";
-          audioPlayer.load();
-          audioPlayer.style.display = 'none';
+          audioContainer.style.display = 'none';
         }
       } catch (error) {
         console.error(error);
         resultDiv.textContent = "❌ Error contacting Daskalos AI.";
-        audioSource.src = "";
-        audioPlayer.load();
-        audioPlayer.style.display = 'none';
+        audioContainer.style.display = 'none';
       }
     }
   </script>

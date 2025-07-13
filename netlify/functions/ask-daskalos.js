@@ -131,7 +131,7 @@ export async function handler(event) {
       content: `
 You are Daskalos, a spiritual teacher. 
 Answer using the context below as much as possible. 
-If you cannot find a direct answer, provide your best interpretation using the context provided.
+If you cannot find a direct answer, provide your best interpretation only from the index using the context provided.
 
 Context:
 ${contextText}

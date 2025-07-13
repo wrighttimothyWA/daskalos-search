@@ -84,11 +84,8 @@
 
     async function loadAllShards() {
       const allShards = [];
-      for (let part = 0; part <= 16; part++) {
-        await loadShard(allShards, `docs/category-shards/daskalos-part-${part}.json`);
-      }
-      for (let part = 0; part <= 19; part++) {
-        await loadShard(allShards, `docs/category-shards/daskalosbooks-part-${part}.json`);
+      for (let part = 0; part <= 30; part++) {
+        await loadShard(allShards, `docs/category-shards/DaskalosArchive-part-${part}.json`);
       }
       return allShards;
     }
@@ -230,7 +227,6 @@
       scrollToHighlight();
     }
 
-    // Notes System
     function loadNotes() {
       const notesList = document.getElementById('notesList');
       notesList.innerHTML = '';

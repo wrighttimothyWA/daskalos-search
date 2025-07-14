@@ -85,8 +85,13 @@
     function buildHighlightRegex(searchTerm) {
       const words = sanitizeInput(searchTerm).split(/\s+/).filter(Boolean);
       if (words.length === 0) return null;
-      // Match any of the words, allowing prefix matching (like "teach" -> "teaching")
-      return new RegExp(words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\w*').join('|'), 'gi');
+      // Make it tolerate some punctuation
+      return new RegExp(
+        words
+          .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(\\W+|\\s+)?')
+          .join('|'),
+        'gi'
+      );
     }
 
     async function loadAllShards() {
@@ -190,15 +195,21 @@
         if (!res.ok) throw new Error('Not found');
         let content = await res.text();
 
+        // highlight before escaping
+        const highlightRegex = buildHighlightRegex(searchTerm);
+        if (highlightRegex) {
+          content = content.replace(highlightRegex, match =>
+            `<span class="highlight">${match}</span>`
+          );
+        }
+
+        // Escape everything except our highlight spans
         let safeContent = content
           .replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
-
-        const highlightRegex = buildHighlightRegex(searchTerm);
-        if (highlightRegex) {
-          safeContent = safeContent.replace(highlightRegex, match => `<span class="highlight">${match}</span>`);
-        }
+          .replace(/>/g, "&gt;")
+          .replace(/&lt;span class=&quot;highlight&quot;&gt;/g, '<span class="highlight">')
+          .replace(/&lt;\/span&gt;/g, '</span>');
 
         document.getElementById('fullText').innerHTML = safeContent;
         highlights = document.querySelectorAll('.highlight');

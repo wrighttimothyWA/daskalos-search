@@ -85,13 +85,30 @@
     function buildHighlightRegex(searchTerm) {
       const words = sanitizeInput(searchTerm).split(/\s+/).filter(Boolean);
       if (words.length === 0) return null;
-      // Make it tolerate some punctuation
-      return new RegExp(
-        words
-          .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(\\W+|\\s+)?')
-          .join('|'),
-        'gi'
-      );
+      return new RegExp(words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'gi');
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function insertHighlights(content, searchTerm) {
+      const regex = buildHighlightRegex(searchTerm);
+      if (!regex) return escapeHtml(content);
+
+      let result = '';
+      let lastIndex = 0;
+      let match;
+      while ((match = regex.exec(content)) !== null) {
+        result += escapeHtml(content.slice(lastIndex, match.index));
+        result += `<span class="highlight">${escapeHtml(match[0])}</span>`;
+        lastIndex = match.index + match[0].length;
+      }
+      result += escapeHtml(content.slice(lastIndex));
+      return result;
     }
 
     async function loadAllShards() {
@@ -195,21 +212,7 @@
         if (!res.ok) throw new Error('Not found');
         let content = await res.text();
 
-        // highlight before escaping
-        const highlightRegex = buildHighlightRegex(searchTerm);
-        if (highlightRegex) {
-          content = content.replace(highlightRegex, match =>
-            `<span class="highlight">${match}</span>`
-          );
-        }
-
-        // Escape everything except our highlight spans
-        let safeContent = content
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/&lt;span class=&quot;highlight&quot;&gt;/g, '<span class="highlight">')
-          .replace(/&lt;\/span&gt;/g, '</span>');
+        let safeContent = insertHighlights(content, searchTerm);
 
         document.getElementById('fullText').innerHTML = safeContent;
         highlights = document.querySelectorAll('.highlight');

@@ -79,13 +79,13 @@
     });
 
     function sanitizeInput(input) {
-      return input.replace(/[^a-zA-Z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+      return input.replace(/\s+/g, ' ').trim();
     }
 
     function buildHighlightRegex(searchTerm) {
-      const words = sanitizeInput(searchTerm).split(/\s+/).filter(Boolean);
-      if (words.length === 0) return null;
-      return new RegExp(words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'gi');
+      const phrase = sanitizeInput(searchTerm);
+      if (!phrase) return null;
+      return new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
     }
 
     function escapeHtml(text) {

@@ -82,6 +82,13 @@
       return input.replace(/[^a-zA-Z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
+    function buildHighlightRegex(searchTerm) {
+      const words = sanitizeInput(searchTerm).split(/\s+/).filter(Boolean);
+      if (words.length === 0) return null;
+      // Match any of the words, allowing prefix matching (like "teach" -> "teaching")
+      return new RegExp(words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\w*').join('|'), 'gi');
+    }
+
     async function loadAllShards() {
       const allShards = [];
       for (let part = 0; part <= 30; part++) {
@@ -188,9 +195,9 @@
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;");
 
-        if (searchTerm) {
-          const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-          safeContent = safeContent.replace(regex, match => `<span class="highlight">${match}</span>`);
+        const highlightRegex = buildHighlightRegex(searchTerm);
+        if (highlightRegex) {
+          safeContent = safeContent.replace(highlightRegex, match => `<span class="highlight">${match}</span>`);
         }
 
         document.getElementById('fullText').innerHTML = safeContent;
